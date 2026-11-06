@@ -21,3 +21,13 @@ strict = true
 [tool.ruff]
 target-version = "py310"
 line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "D"] # Включаем проверку ошибок, стиля и docstrings
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"   # Указываем стиль документации Google, который мы использовали
+
+[[tool.mypy.overrides]]
+module = ["matplotlib.*", "numpy.*"]
+ignore_missing_imports = true # Игнорируем отсутствие файлов типов у внешних библиотек
