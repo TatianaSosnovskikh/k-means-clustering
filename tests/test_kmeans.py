@@ -38,8 +38,12 @@ def test_reproducibility(sample_data: Tuple[List[List[float]], List[int]]) -> No
     model2 = KMeans(n_clusters=3, max_iter=10, seed=42)
     labels2 = model2.fit(X)
 
-    assert labels1 == labels2
-    assert model1.centroids == model2.centroids
+    assert labels1 == labels2, (
+        "Ошибка: Одинаковый seed привел к разным меткам кластеров!"
+    )
+    assert model1.centroids == model2.centroids, (
+        "Ошибка: Одинаковый seed привел к разным координатам центроидов!"
+    )
 
 
 def test_inertia_monotonicity(
@@ -56,7 +60,10 @@ def test_inertia_monotonicity(
     model_high = KMeans(n_clusters=3, max_iter=50, seed=42)
     model_high.fit(X)
 
-    assert model_high.inertia_ <= model_low.inertia_
+    assert model_high.inertia_ <= model_low.inertia_, (
+        f"Ошибка: СКО увеличилось при росте итераций! "
+        f"Inertia(1 iter)={model_low.inertia_}, Inertia(50 iter)={model_high.inertia_}"
+    )
 
 
 def test_different_k(sample_data: Tuple[List[List[float]], List[int]]) -> None:
@@ -66,8 +73,14 @@ def test_different_k(sample_data: Tuple[List[List[float]], List[int]]) -> None:
     for k in range(2, 5):
         model = KMeans(n_clusters=k, seed=42)
         labels = model.fit(X)
-        assert len(model.centroids) == k
-        assert len(set(labels)) <= k
+        assert len(model.centroids) == k, (
+            f"Ошибка: Для k={k} создано неверное число центроидов "
+            f"({len(model.centroids)})!"
+        )
+        assert len(set(labels)) <= k, (
+            f"Ошибка: Количество уникальных меток ({len(set(labels))}) "
+            f"превысило заданное k={k}!"
+        )
 
 
 def test_cluster_accuracy(
@@ -85,9 +98,15 @@ def test_cluster_accuracy(
 
     # set() оставляет только уникальные значения.
     # Если в группе все точки принадлежат одному кластеру, длина сета будет равна 1.
-    assert len(set(group1)) == 1
-    assert len(set(group2)) == 1
-    assert len(set(group3)) == 1
+    assert len(set(group1)) == 1, (
+        f"Ошибка: Точки из первого кластера разбились на разные группы: {group1}!"
+    )
+    assert len(set(group2)) == 1, (
+        f"Ошибка: Точки из второго кластера разбились на разные группы: {group2}!"
+    )
+    assert len(set(group3)) == 1, (
+        f"Ошибка: Точки из третьего кластера разбились на разные группы: {group3}!"
+    )
 
 
 def test_generate_mock_data() -> None:
@@ -107,16 +126,25 @@ def test_generate_mock_data() -> None:
     )
 
     # Проверяем типы возвращаемых данных
-    assert isinstance(X, list)
-    assert isinstance(labels, list)
+    assert isinstance(X, list), "Ошибка: Матрица X должна быть списком!"
+    assert isinstance(labels, list), "Ошибка: Список меток должен быть списком!"
 
     # Проверяем размерность данных
-    assert len(X) == samples
-    assert len(labels) == samples
+    assert len(X) == samples, (
+        f"Ошибка: Количество сгенерированных точек ({len(X)}) не равно {samples}!"
+    )
+    assert len(labels) == samples, (
+        f"Ошибка: Количество сгенерированных меток ({len(labels)}) не равно {samples}!"
+    )
 
     # Проверяем, что каждая точка двумерна (имеет X и Y координаты)
-    assert all(len(point) == features for point in X)
+    assert all(len(point) == features for point in X), (
+        f"Ошибка: Не все точки имеют заданную размерность пространства ({features})!"
+    )
 
     # Проверяем распределение меток
     for i in range(n_clusters):
-        assert labels.count(i) == samples // n_clusters
+        assert labels.count(i) == samples // n_clusters, (
+            f"Ошибка: В кластере {i} находится {labels.count(i)} точек "
+            f"вместо {samples // n_clusters}!"
+        )
