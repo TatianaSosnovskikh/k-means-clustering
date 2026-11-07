@@ -88,3 +88,35 @@ def test_cluster_accuracy(
     assert len(set(group1)) == 1
     assert len(set(group2)) == 1
     assert len(set(group3)) == 1
+
+
+def test_generate_mock_data() -> None:
+    """Проверяет корректность работы генератора синтетических данных."""
+    from src.kmeans import generate_mock_data
+
+    samples: int = 300
+    seed: int = 42
+    features: int = 2
+    n_clusters: int = 3
+
+    X, labels = generate_mock_data(
+        samples=samples,
+        seed=seed,
+        features=features,
+        n_clusters=n_clusters,
+    )
+
+    # Проверяем типы возвращаемых данных
+    assert isinstance(X, list)
+    assert isinstance(labels, list)
+
+    # Проверяем размерность данных
+    assert len(X) == samples
+    assert len(labels) == samples
+
+    # Проверяем, что каждая точка двумерна (имеет X и Y координаты)
+    assert all(len(point) == features for point in X)
+
+    # Проверяем распределение меток
+    for i in range(n_clusters):
+        assert labels.count(i) == samples // n_clusters

@@ -147,3 +147,41 @@ class KMeans:
             center: List[float] = self.centroids[label]
             total_sq_dist += sum((a - b) ** 2 for a, b in zip(point, center))
         return total_sq_dist
+
+
+def generate_mock_data(
+    samples: int,
+    seed: int,
+    features: int = 2,
+    n_clusters: int = 3,
+) -> tuple[list[list[float]], list[int]]:
+    """Генерирует синтетические данные из 3 кластеров с помощью NumPy.
+
+    Args:
+        samples: Общее количество точек.
+        seed: Зерно генератора случайных чисел.
+        features: Размерность пространства.
+        n_clusters: Количество генерируемых кластеров.
+
+    Returns:
+        Кортеж из списка координат точек X и списка истинных меток.
+    """
+    import numpy as np
+
+    np.random.seed(seed)
+
+    centers = np.random.uniform(-10.0, 10.0, size=(n_clusters, features)).tolist()
+
+    samples_per_center: int = samples // n_clusters
+
+    x_data: list[list[float]] = []
+    true_labels: list[int] = []
+
+    for i, center in enumerate(centers):
+        points = np.random.normal(
+            loc=center, scale=0.8, size=(samples_per_center, features)
+        ).tolist()
+        x_data.extend(points)
+        true_labels.extend([i] * samples_per_center)
+
+    return x_data, true_labels
