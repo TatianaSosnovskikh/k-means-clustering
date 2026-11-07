@@ -185,3 +185,126 @@ def generate_mock_data(
         true_labels.extend([i] * samples_per_center)
 
     return x_data, true_labels
+
+
+def plot_clusters(
+    x_data: list[list[float]],
+    labels: list[int],
+    centroids: list[list[float]],
+    n_clusters: int,
+    filename: str = "docs/clusters_plot.png",
+) -> None:
+    """Строит и сохраняет график кластеров с центроидами.
+
+    Args:
+        x_data: Список координат точек.
+        labels: Присвоенные метки кластеров.
+        centroids: Координаты центроидов.
+        n_clusters: Количество кластеров.
+        filename: Путь для сохранения изображения.
+    """
+    from pathlib import Path
+    import matplotlib.pyplot as plt
+
+    Path(filename).parent.mkdir(parents=True, exist_ok=True)
+    x_coords: list[float] = [p[0] for p in x_data]
+    y_coords: list[float] = [p[1] for p in x_data]
+
+    plt.figure(figsize=(16, 9))
+    plt.scatter(
+        x_coords, y_coords, c=labels, cmap="viridis", alpha=0.6, edgecolors="black"
+    )
+    c_x: list[float] = [c[0] for c in centroids]
+    c_y: list[float] = [c[1] for c in centroids]
+    plt.scatter(c_x, c_y, c="red", s=200, marker="X", label="Центроиды")
+
+    plt.title(f"Результат кластеризации k-means (k={n_clusters})")
+    plt.xlabel("X")
+    plt.ylabel("Y")
+    plt.legend()
+    plt.grid(True)
+    plt.savefig(filename)
+    plt.close()
+
+
+def plot_elbow(
+    x_data: list[list[float]],
+    max_iter: int,
+    seed: int,
+    filename: str = "docs/elbow_plot.png",
+) -> None:
+    """Строит график метода локтя для выбора оптимального k.
+
+    Args:
+        x_data: Список координат точек.
+        max_iter: Максимальное число итераций.
+        seed: Зерно генератора случайных чисел.
+        filename: Путь для сохранения изображения.
+    """
+    from pathlib import Path
+    import matplotlib.pyplot as plt
+
+    Path(filename).parent.mkdir(parents=True, exist_ok=True)
+    k_values: list[int] = list(range(1, 7))
+    inertias: list[float] = []
+
+    for k in k_values:
+        model = KMeans(n_clusters=k, max_iter=max_iter, seed=seed)
+        model.fit(x_data)
+        inertias.append(model.inertia_)
+
+    plt.figure(figsize=(8, 5))
+    plt.plot(k_values, inertias, marker="o", linestyle="--", color="blue")
+    plt.xlabel("Количество кластеров (k)")
+    plt.ylabel("СКО внутри кластеров (Inertia)")
+    plt.title("Метод локтя для определения оптимального k")
+    plt.grid(True)
+    plt.savefig(filename)
+    plt.close()
+
+
+def main() -> None:
+    """Точка входа CLI: разбирает аргументы и запускает кластеризацию."""
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description="Кластеризация методом k-means на Python."
+    )
+    parser.add_argument("--samples", type=int, default=300, help="Количество точек")
+    parser.add_argument("--k", type=int, default=3, help="Количество кластеров")
+    parser.add_argument("--iter", type=int, default=100, help="Максимум итераций")
+    parser.add_argument("--seed", type=int, default=42, help="Зерно случайности")
+    parser.add_argument(
+        "--elbow", action="store_true", help="Построить график метода локтя"
+    )
+    args = parser.parse_args()
+
+    if args.samples <= 0 or args.k <= 0 or args.iter <= 0:
+        print("Ошибка: параметры --samples, --k и --iter должны быть больше 0.")
+        return
+
+    x_data, _ = generate_mock_data(
+        samples=args.samples, seed=args.seed, n_clusters=args.k
+    )
+
+    if args.elbow:
+        plot_elbow(x_data, args.iter, args.seed)
+        print("График метода локтя сохранён в docs/elbow_plot.png")
+        return
+
+    if args.k > len(x_data):
+        print("Ошибка: количество кластеров не может превышать число точек.")
+        return
+
+    model = KMeans(n_clusters=args.k, max_iter=args.iter, seed=args.seed)
+    labels = model.fit(x_data)
+    counts: dict[int, int] = {i: labels.count(i) for i in range(args.k)}
+
+    print(f"Точек в кластерах: {counts}")
+    print(f"Inertia (СКО): {model.inertia_:.4f}")
+    plot_clusters(x_data, labels, model.centroids, args.k)
+    print("График кластеров сохранён в docs/clusters_plot.png")
+
+
+if __name__ == "__main__":
+    main()
